@@ -5,7 +5,7 @@ using UnitySocketIO;
 using UnitySocketIO.Events;
 
 public delegate void MessageDelegate(string mensagge);
-public delegate void InputDelegate(string playerId,string command);
+public delegate void InputDelegate(string playerId,PlayerInputData input);
 
 public class Network : MonoBehaviour
 {
@@ -19,8 +19,7 @@ public class Network : MonoBehaviour
 
     void Start()
     {
-        DontDestroyOnLoad(this.gameObject);
-   
+        DontDestroyOnLoad(this.gameObject);   
     }
 
     public void ConnectedToServer()
@@ -53,6 +52,12 @@ public class Network : MonoBehaviour
         RoomOptions roomOptions = new RoomOptions(2, 2, "Mi sala");
         socket.Emit("createRoom", JsonUtility.ToJson(roomOptions));
     }
+    public void GameReady()
+    {
+        Debug.Log("Game Ready");
+        socket.Emit("gameReady");
+    }
+
 
     void RoomCreated (SocketIOEvent evt)
     {
@@ -82,11 +87,16 @@ public class Network : MonoBehaviour
 
     void PlayerInput(SocketIOEvent evt)
     {
-        JsonData data = JsonUtility.FromJson<JsonData>(evt.data);
-        string playerId =data.playerId;
-        string command =data.command;
-        onPlayerInput(playerId,command);
+        Debug.Log("data:"+evt.data);
+        PlayerInputData inputData = JsonUtility.FromJson<PlayerInputData>(evt.data);
+
+        string playerId = inputData.playerId;
+    
+
+        onPlayerInput(playerId, inputData);
     }
+
+
 }
 
 class JsonData
@@ -94,7 +104,25 @@ class JsonData
     public string message;
     public string room;
     public string playerId;
+}
+
+public class PlayerInputData
+{
+    public string playerId;
     public string command;
+    public float axisHorizontal;
+    public float axisVertical;
+
+
+    override
+    
+        public string ToString()
+    {
+        if (command == "MOVE")
+            return "Vertical:" + axisVertical + " Horizontal: " + axisHorizontal;
+        else
+            return command;
+    }
 }
 
 class RoomOptions

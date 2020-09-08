@@ -6,16 +6,18 @@ using UnityEngine.UI;
 
 public class LobbyController : MonoBehaviour
 {
+    public int MIN_PLAYERS = 2;
     public int MAX_PLAYERS = 2;
 
     Network networkController;
-
-
-    List<Player> Players = new List<Player>();
+    GameSate GAME_STATE;
 
     // Start is called before the first frame update
     void Start()
     {
+        GAME_STATE = GameObject.Find("GameState").GetComponent<GameSate>();
+
+
         networkController = GameObject.Find("SocketIO").GetComponent<Network>();
         networkController.CreateRoom();
 
@@ -36,45 +38,26 @@ public class LobbyController : MonoBehaviour
 
     void OnPlayerEnter(string playerId)
     {
-        if (Players.Count <= this.MAX_PLAYERS)
+        if (GAME_STATE.Players.Count <= this.MAX_PLAYERS)
         {
-            Player player = new Player(playerId, Players.Count+1);
-            Players.Add(player);
-            GameObject.Find("SlotPlayer" + Players.Count).GetComponentInChildren<Text>().text = player.Nickname+" Conectado";
+            Player player = new Player(playerId, GAME_STATE.Players.Count+1);
+            GAME_STATE.Players.Add(player);
+            GameObject.Find("SlotPlayer" + GAME_STATE.Players.Count).GetComponentInChildren<Text>().text = player.Nickname+" Conectado";
         }
 
     }
 
     void OnPlayerReady(string playerId)
     {
-        var player = Players.Find(p => p.Id == playerId);
+        var player = GAME_STATE.Players.Find(p => p.Id == playerId);
         player.Ready = true;
-        Debug.Log("Player Ready: " + player.Id + "Name : " + player.Nickname);
-        int index = Players.IndexOf(player)+1;
-        Debug.Log(player.Nickname + "Ready..... Slot" + index);
+        int index = GAME_STATE.Players.IndexOf(player)+1;
         GameObject.Find("SlotPlayer" + index).GetComponentInChildren<Text>().text = player.Nickname+ " Listo";
 
-        if (!Players.Exists(p => !p.Ready) && Players.Count == MAX_PLAYERS)
+        if (!GAME_STATE.Players.Exists(p => !p.Ready) && GAME_STATE.Players.Count == MAX_PLAYERS)
             this.gameObject.SendMessage("LoadScene", 2, SendMessageOptions.RequireReceiver);               
 
     }
 }
 
-class Player
-{
-    public string Id { get; set; }
-    public bool Ready { get; set; }
-    public string Nickname { get; set; }
 
-
-    public Player(string id, int number)
-    {
-        this.Id = id;
-        this.Nickname = "Jugador " + number;
-    }
-    public Player(string id, string nickname)
-    {
-        this.Id = id;
-        this.Nickname = nickname;
-    }
-}
